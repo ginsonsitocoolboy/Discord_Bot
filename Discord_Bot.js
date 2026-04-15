@@ -4,6 +4,7 @@ const {
   SlashCommandBuilder,
   REST,
   Routes,
+  ChannelType,
 } = require('discord.js');
 
 const TOKEN = 'DEIN_BOT_TOKEN';
@@ -32,7 +33,14 @@ const commands = [
     .addSubcommand(sub =>
       sub
         .setName('voice')
-        .setDescription('Wählt nur aus Personen im Voice-Channel')
+        .setDescription('Wählt nur aus einem bestimmten Voice-Channel')
+        .addChannelOption(option =>
+          option
+            .setName('channel')
+            .setDescription('Der Voice-Channel')
+            .addChannelTypes(ChannelType.GuildVoice, ChannelType.GuildStageVoice)
+            .setRequired(true)
+        )
     )
 
     .addSubcommand(sub =>
@@ -76,7 +84,11 @@ client.on('interactionCreate', async (interaction) => {
     let filteredMembers = members.filter(member => !member.user.bot);
 
     if (subcommand === 'voice') {
-      filteredMembers = filteredMembers.filter(member => member.voice.channel);
+      const selectedChannel = interaction.options.getChannel('channel');
+
+      filteredMembers = filteredMembers.filter(member =>
+        member.voice.channelId === selectedChannel.id
+      );
     }
 
     if (subcommand === 'role') {
@@ -90,7 +102,8 @@ client.on('interactionCreate', async (interaction) => {
       let message = 'Keine passende Person gefunden.';
 
       if (subcommand === 'voice') {
-        message = 'Es ist gerade niemand im Voice-Channel.';
+        const selectedChannel = interaction.options.getChannel('channel');
+        message = `Im Voice-Channel ${selectedChannel} ist gerade niemand.`;
       }
 
       if (subcommand === 'role') {
@@ -111,7 +124,8 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     if (subcommand === 'voice') {
-      replyText += '\nModus: Nur Voice-Channel';
+      const selectedChannel = interaction.options.getChannel('channel');
+      replyText += `\nModus: Nur aus ${selectedChannel}`;
     }
 
     if (subcommand === 'role') {
